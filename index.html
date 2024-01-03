@@ -4,45 +4,134 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CSV Parser App</title>
+  <title>Bilbo calculator</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;1,300;1,400&display=swap');
+
+    body {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      margin: 0;
+      padding: 20px;
+      background: #111;
+      color: #fff;
+      padding: 0;
+    }
+    a {
+      color: #fff;
+      text-decoration: none;
+      border-bottom: 1px solid #fff;
+      transition: all 0.1s ease-in-out;
+    }
     .drop-zone {
       display: flex;
       flex-direction: column;
-      border: 2px dashed #ccc;
+      border: 2px dashed #333;
       padding: 20px;
       text-align: center;
       cursor: pointer;
-      margin-bottom: 20px;
+      transition: all 0.1s ease-in-out;
     }
     input {
       display: none;
     }
-
+    
     table {
       width: 100%;
+      border-color: #333;
       border-collapse: collapse;
     }
 
     th,
     td {
-      border: 1px solid #ddd;
+      border: 1px solid #333;
       padding: 8px;
       text-align: left;
+    }
+
+    .row-highlight {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    button {
+      padding: 10px 20px;
+      border: 0;
+      background: rgba(255, 255, 255, 0.0);
+      border: white 1px solid;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      font: inherit;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: all 0.1s ease-in-out;
+    }
+
+    button:hover, .drop-zone:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    #app {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .inner {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .header {
+      display: flex;
+      font-weight: 300;
+      /* border: #ccc 1px solid; */
+      gap: 32px;
+      height: 80px;
+    }
+    /* first cell of header */
+    .header > div:first-child {
+      font-size: 96px;
+      align-self: center;
+    }
+    /* second cell of header */
+    .header > div:nth-child(2) {
+      font-size: 22px;
+      line-height: 1.1em;
+      padding-right: 20px;
+      align-self: flex-end;
+      font-style: italic;
+    }
+    .dragging {
+      background: rgba(255, 255, 255, 0.2);
     }
   </style>
 </head>
 
 <body>
 
-  <div id="app">
+  <div id="app" @dragover.prevent :class="dragging ? 'dragging' : ''">
+
+  <div class="inner">
+
+    <div class="header">
+      <div>Bilbo</div>
+      <div>Paddle Billing <br/>report calculator</div>
+    </div>
     <label for="fileInput" class="drop-zone" @dragover.prevent @dragenter.prevent @drop.prevent="handleFileUpload">
       <input type="file" id="fileInput" @change="handleFileInputChange">
-      <p>Drop your CSV file here or click to browse</p>
+      <p>{{ dragging ? "Preparing to nerd magic" : "Drop your CSV or click to browse"}}</p>
     </label>
+
     <table>
       <thead>
-        <tr>
+        <tr class="row-highlight">
           <th>Product Name</th>
           <th>Earnings</th>
         </tr>
@@ -50,19 +139,25 @@
       <tbody>
         <tr v-for="(earning, productId) in totalEarnings" :key="productId">
           <td>{{ getProductById(productId).name }}</td>
-          <td>{{ earning.toFixed(2) | dollars }}</td>
+          <td><em>{{ earning.toFixed(2) | dollars }}</em></td>
         </tr>
-        <tr>
+        <tr class="row-highlight">
           <td><strong>Total</strong></td>
           <td><strong>{{ Object.values(totalEarnings).reduce((a, b) => a + b, 0).toFixed(2) | dollars }}</strong></td>
         </tr>
       </tbody>
     </table>
 
-    <button @click="copyProductEarnings">Copy Total Earnings</button>
-    <!-- notification that the copy action happened -->
-    <div v-if="copied" style="color: green;">Copied!</div>
+    <button @click="copyProductEarnings">{{ copied ? "Copied" : "Copy Total Earnings" }}</button>
   </div>
+
+  <!-- footer with link to github -->
+  <footer style="position: fixed; bottom: 0; left: 0; right: 0; padding: 20px; text-align: center;">
+    Built by <a href="https://battleaxe.co" target="_blank" rel="noopener noreferrer">Battle Axe</a> |
+    <a href="https://github.com/battleaxedotco/bilbo" target="_blank">Github</a>
+  </footer>
+  </div>
+
 
   <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
@@ -93,6 +188,8 @@
       data() {
         return {
           copied: false,
+          dragging: false,
+          leaveCount: 0,
           totalEarnings: {
             pri_01h7jacqjse1pmpds97q8aetzk: 0,
             pri_01h7gcp07yacazx9rs35sgeryd: 0,
@@ -100,6 +197,20 @@
             pri_01h7jb3z5a4zkj97t1wj62mkq8: 0,
           },
         };
+      },
+      mounted() {
+        window.addEventListener("dragenter", () => {
+          this.dragging = true;
+          this.leaveCount = 0;
+        });
+        window.addEventListener("dragleave", () => {
+          this.leaveCount++;
+          if (this.leaveCount >= 2) this.dragging = false;
+        });
+        window.addEventListener("drop", (e) => {
+          e.preventDefault();
+          this.handleFileUpload(e);
+        });
       },
       methods: {
         resetTotalEarnings() {
@@ -110,6 +221,7 @@
         },
         handleFileUpload(event) {
           this.resetTotalEarnings()
+          this.dragging = false;
           const file = event.dataTransfer.files[0];
 
           if (file) {
