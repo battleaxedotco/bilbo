@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSV Parser App</title>
+  <style>
+    .drop-zone {
+      display: flex;
+      flex-direction: column;
+      border: 2px dashed #ccc;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    input {
+      display: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="app">
+    <label for="fileInput" class="drop-zone" @dragover.prevent @dragenter.prevent @drop.prevent="handleFileUpload">
+      <input type="file" id="fileInput" @change="handleFileInputChange">
+      <p>Drop your CSV file here or click to browse</p>
+    </label>
+    <table>
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Earnings</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(earning, productId) in totalEarnings" :key="productId">
+          <td>{{ getProductById(productId).name }}</td>
+          <td>{{ earning.toFixed(2) | dollars }}</td>
+        </tr>
+        <tr>
+          <td><strong>Total</strong></td>
+          <td><strong>{{ Object.values(totalEarnings).reduce((a, b) => a + b, 0).toFixed(2) | dollars }}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <button @click="copyProductEarnings">Copy Total Earnings</button>
+    <!-- notification that the copy action happened -->
+    <div v-if="copied" style="color: green;">Copied!</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+  <script>
+    const products = {
+      pri_01h7jacqjse1pmpds97q8aetzk: {
+        name: "Rubberhose",
+        price: 65
+      },
+      pri_01h7gcp07yacazx9rs35sgeryd: {
+        name: "Overlord",
+        price: 55
+      },
+      pri_01h7jb6nxqbhkhqfg1w5myqfhd: {
+        name: "Timelord",
+        price: 45
+      },
+      pri_01h7jb3z5a4zkj97t1wj62mkq8: {
+        name: "Anubis",
+        price: 25
+      },
+  };
+
+
+    new Vue({
+      el: '#app',
+      data() {
+        return {
+          copied: false,
+          totalEarnings: {
+            pri_01h7jacqjse1pmpds97q8aetzk: 0,
+            pri_01h7gcp07yacazx9rs35sgeryd: 0,
+            pri_01h7jb6nxqbhkhqfg1w5myqfhd: 0,
+            pri_01h7jb3z5a4zkj97t1wj62mkq8: 0,
+          },
+        };
+      },
+      methods: {
+        resetTotalEarnings() {
+          // iterate through totalEarnings and set all values to 0
+          for (const key in this.totalEarnings) {
+            this.totalEarnings[key] = 0;
+          }
+        },
+        handleFileUpload(event) {
+          this.resetTotalEarnings()
+          const file = event.dataTransfer.files[0];
+
+          if (file) {
+            this.parseCSV(file);
+          }
+        },
+        handleFileInputChange(event) {
+          this.resetTotalEarnings()
+          const file = event.target.files[0];
+
+          if (file) {
+            this.parseCSV(file);
+          }
+        },
+        parseCSV(file) {
+          Papa.parse(file, {
+            header: true,
+            complete: (result) => {
+              this.calculateEarnings(result.data);
+            },
+          });
+        },
+        calculateEarnings(data) {
+          data.forEach((row) => {
+            if (!row.price_id_list) return;
+            try {
+              const productIds = row.price_id_list.split(',');
+              productIds.forEach((productId) => {
+                const product = products[productId];
+                const earnings = parseFloat(row.earnings);
+  
+                if (product) {
+                  if (productIds.length === 1) {
+                    this.totalEarnings[productId] += earnings;
+                  } else {
+                    // add all the pries together and then calculate the percentage
+                    const totalRetailPrice = productIds.reduce((total, id) => {
+                      return total + products[id].price;
+                    }, 0);
+                    const percentage = product.price / totalRetailPrice;
+                    this.totalEarnings[productId] += earnings * percentage;
+                  }
+                }
+              });
+            } catch (error) {
+              console.log(error, row.price_id_list);
+            }
+
+          });
+        },
+        getProductById(productId) {
+          return products[productId];
+        },
+        copyProductEarnings() {
+          // create a string of all the earnings separated by tab, clamped to 2 decimal places
+          const earnings = Object.values(this.totalEarnings).map((earning) => {
+            return earning.toFixed(2);
+          }).join('\t');
+          navigator.clipboard.writeText(earnings);
+          
+          this.copied = true;
+          setTimeout(() => {
+            this.copied = false;
+          }, 1000);
+        },
+      },
+      filters: {
+        dollars(value) {
+          // add a dollar sign and commas
+          return '$' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        },
+      },
+    });
+  </script>
+
+</body>
+
+</html>
