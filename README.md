@@ -2,7 +2,7 @@
 
 Paddle Billing report converter
 
-Live at https://battleaxe.dev/bilbo
+Live at: https://battleaxe.dev/bilbo
 
 ![UI](https://github.com/battleaxedotco/bilbo/assets/8580225/b7137d9c-ace1-419c-980a-e5cd367ae2e2)
 
@@ -73,6 +73,6 @@ Update those values with the prices from your own Paddle Dashboard.
 
 **Bilbo** is used exclusively for getting a general idea of product sales.
 
-This is probably innacurate and should not be used for calculating taxes or anything legal. 
+This is probably inaccurate and should not be used for calculating taxes or anything legal. 
 
-No waranties are given. Use at your own risk. 
+No warranties are given. Use at your own risk. 
