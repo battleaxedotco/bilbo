@@ -251,7 +251,8 @@
               const productIds = row.price_id_list.split(',');
               productIds.forEach((productId) => {
                 const product = products[productId];
-                const earnings = parseFloat(row.earnings);
+                const earnings = parseFloat(row.earnings) || 0;
+                
   
                 if (product) {
                   if (productIds.length === 1) {
