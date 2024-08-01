@@ -38,7 +38,7 @@
     input {
       display: none;
     }
-    
+
     table {
       width: 100%;
       border-color: #333;
@@ -170,7 +170,11 @@
       },
       pri_01h7gcp07yacazx9rs35sgeryd: {
         name: "Overlord",
-        price: 55
+        price: 60
+      },
+      pri_01j0npq9rpjf2wpx8grctcx2tv: {
+        name: "Overlord - renew",
+        price: 60
       },
       pri_01h7jb6nxqbhkhqfg1w5myqfhd: {
         name: "Timelord",
@@ -193,6 +197,7 @@
           totalEarnings: {
             pri_01h7jacqjse1pmpds97q8aetzk: 0,
             pri_01h7gcp07yacazx9rs35sgeryd: 0,
+            pri_01j0npq9rpjf2wpx8grctcx2tv: 0,
             pri_01h7jb6nxqbhkhqfg1w5myqfhd: 0,
             pri_01h7jb3z5a4zkj97t1wj62mkq8: 0,
           },
@@ -252,8 +257,8 @@
               productIds.forEach((productId) => {
                 const product = products[productId];
                 const earnings = parseFloat(row.earnings) || 0;
-                
-  
+
+
                 if (product) {
                   if (productIds.length === 1) {
                     this.totalEarnings[productId] += earnings;
@@ -282,7 +287,7 @@
             return earning.toFixed(2);
           }).join('\t');
           navigator.clipboard.writeText(earnings);
-          
+
           this.copied = true;
           setTimeout(() => {
             this.copied = false;
